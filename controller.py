@@ -93,11 +93,11 @@ def compute_force_and_torque(current_position, current_attitude):
     current_linear_velocity = np.array((0, 0, 0))
     current_angular_velocity = np.array((0, 0, 0))
     # ****************************************************************
-
     attitude_rotation_matrix = get_rotation_matrix_from_euler_angles(current_attitude)
 
     # Translational Part
     error_x = current_position - DESIRED_POSITION
+    #error_x = float(errors[0])
     error_v = current_linear_velocity - DESIRED_LINEAR_VELOCITY # current_velocity has to be somehow received by the ACROBAT sensors (subscribe to topic) 
     acceleration = -K_x * error_x - K_v * error_v # K_x and K_v are the proportionate and derivative gains (constants) and error_x and error_v the position and velocity errors
     force = np.dot( (FREE_FLYER_MASS * attitude_rotation_matrix), acceleration)
@@ -109,7 +109,7 @@ def compute_force_and_torque(current_position, current_attitude):
     S_w_matrix = get_S_w( np.dot( np.dot(attitude_rotation_matrix.T, DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY ) )
     torque = -K_r * error_r - K_w * error_w + np.dot(np.dot(np.dot(np.dot(S_w_matrix, FREE_FLYER_MOMENT_OF_INERTIA), attitude_rotation_matrix.T), DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY) + np.dot(np.dot(np.dot(FREE_FLYER_MOMENT_OF_INERTIA, attitude_rotation_matrix.T), DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_ACCELERATION)
 
-    #print(str(np.linalg.norm(error_x)) + "  " + str(np.linalg.norm(error_r)))
+    #f.write(str(np.linalg.norm(error_x)) + " " + str(np.linalg.norm(error_r)) + "\n")
     #print(str(error_x[0]) + " " + str(error_x[1]) + " " + str(error_x[2]) + " " + str(error_r[0]) + " " + str(error_r[1]) + " " + str(error_r[2]) + " ")
     #print("Erro na atitude = " + str(error_r))
     #print("***************")
@@ -135,13 +135,11 @@ def get_S_w(vect):
 
 # Converts from force and torque to pwm signals to each of the propellers
 def compute_pwm_control(force, torque):
-    #input_vect = np.concatenate((force, torque), axis = 0)
     input_vect = force
     input_vect = np.append(input_vect, torque)
     q = np.dot(A_inverse, input_vect)
     rpm = forces_to_rpm(q)
     q = map_rpm_to_pulsewidth(rpm)
-    print(q)
     return np.array(q)
 
 # The ACROBAT papers says that F_max = 2 and M_Max = 2
@@ -155,10 +153,7 @@ def map_rpm_to_pulsewidth(rpm_vector):
     difference = 700.0
 
     for idx in range(len(rpm_vector)):
-        if rpm_vector[idx] < 0: #Use anti-clockwise TODO: Might not work this way
-            rpm_vector[idx] = 1500 - rpm_vector[idx] * difference / 2.0
-        elif rpm_vector[idx] > 0:
-            rpm_vector[idx] = 1500 + rpm_vector[idx] * difference / 2.0
+        rpm_vector[idx] = 1500 + rpm_vector[idx] * difference / 2.0
     return rpm_vector
 
 def forces_to_rpm(forces_vector):

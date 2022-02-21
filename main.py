@@ -75,6 +75,7 @@ def main():
             #TODO: I have to confirm that tvecs and rvecs is the position and attitude of the acrobat in relation to aruco marker (I believe it is the opposite now)
             force, torque = controller.compute_force_and_torque(tvec[0][0], current_attitude)
             pwm_control = controller.compute_pwm_control(force, torque)
+            print(str(pwm_control[0]) + " " + str(pwm_control[1]) + " " + str(pwm_control[2]))
             #print(force)
             #print(torque)
             #print("-------------")
