@@ -8,7 +8,7 @@
 #!python2
 import numpy as np # Import Numpy library
 import math
-import matplotlib.pyplot as plt
+import sys
 
 ctr = 0
 x_vect = []
@@ -94,10 +94,8 @@ def compute_force_and_torque(current_position, current_attitude):
     current_angular_velocity = np.array((0, 0, 0))
     # ****************************************************************
     attitude_rotation_matrix = get_rotation_matrix_from_euler_angles(current_attitude)
-
     # Translational Part
     error_x = current_position - DESIRED_POSITION
-    #error_x = float(errors[0])
     error_v = current_linear_velocity - DESIRED_LINEAR_VELOCITY # current_velocity has to be somehow received by the ACROBAT sensors (subscribe to topic) 
     acceleration = -K_x * error_x - K_v * error_v # K_x and K_v are the proportionate and derivative gains (constants) and error_x and error_v the position and velocity errors
     force = np.dot( (FREE_FLYER_MASS * attitude_rotation_matrix), acceleration)
@@ -109,17 +107,9 @@ def compute_force_and_torque(current_position, current_attitude):
     S_w_matrix = get_S_w( np.dot( np.dot(attitude_rotation_matrix.T, DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY ) )
     torque = -K_r * error_r - K_w * error_w + np.dot(np.dot(np.dot(np.dot(S_w_matrix, FREE_FLYER_MOMENT_OF_INERTIA), attitude_rotation_matrix.T), DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY) + np.dot(np.dot(np.dot(FREE_FLYER_MOMENT_OF_INERTIA, attitude_rotation_matrix.T), DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_ACCELERATION)
 
-    #f.write(str(np.linalg.norm(error_x)) + " " + str(np.linalg.norm(error_r)) + "\n")
-    #print(str(error_x[0]) + " " + str(error_x[1]) + " " + str(error_x[2]) + " " + str(error_r[0]) + " " + str(error_r[1]) + " " + str(error_r[2]) + " ")
-    #print("Erro na atitude = " + str(error_r))
-    #print("***************")
-    # x_vect.append(ctr);
-    # y_vect.append(np.linalg.norm(error_r));
-    # plt.scatter(x_vect, y_vect)
-    # ctr = ctr + 1
-    # plt.show()
     force = np.array((force[0], force[2]))
     torque = np.array((torque[1]))
+
 
     return force, torque
 
@@ -147,10 +137,7 @@ def compute_pwm_control(force, torque):
 # Pulse = 1500 ==> Centre; Pulse = 2000 ==> Safe clockwise
 def map_rpm_to_pulsewidth(rpm_vector):
     rpm_vector = rpm_vector
-    centre_pwm = 1500.0
-    max_anti_clockwise = 800.0
-    max_clockwise = 2200.0
-    difference = 700.0
+    difference = 1000.0
 
     for idx in range(len(rpm_vector)):
         rpm_vector[idx] = 1500 + rpm_vector[idx] * difference / 2.0
