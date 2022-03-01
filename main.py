@@ -69,7 +69,7 @@ def main():
             # Computing control values of the feedback chain (Only if one aruco marker was found)
             force, torque = controller.compute_force_and_torque(tvec[0][0], current_attitude)
             pwm_control = controller.compute_pwm_control(force, torque)
-            motor_control.write_pwm(pwm_control)
+            #motor_control.write_pwm(pwm_control)
 
         # If "q" is pressed on the keyboard, 
         # exit this loop

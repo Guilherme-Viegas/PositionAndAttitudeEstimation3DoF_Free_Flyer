@@ -10,10 +10,6 @@ import numpy as np # Import Numpy library
 import math
 import sys
 
-ctr = 0
-x_vect = []
-y_vect = []
-
 def get_rotation_matrix_from_euler_angles(euler_angles):
     x = euler_angles[0]
     y = euler_angles[1]
@@ -53,7 +49,7 @@ DESIRED_LINEAR_VELOCITY = np.array((0, 0, 0)) # We want the robot to be stopped 
 DESIRED_ATTITUDE = np.array((0, 0, 0)) # To be aligned with the AR tag TODO: This might have be confirmed... don't known if this will make the front of the robot face backwards
 DESIRED_ROTATION_MATRIX = get_rotation_matrix_from_euler_angles(DESIRED_ATTITUDE)
 DESIRED_ANGULAR_VELOCITY = np.array((0, 0, 0)) # We want the robot to be stopped in the end
-DESIRED_ANGULAR_ACCELERATION = 0
+DESIRED_ANGULAR_ACCELERATION = np.array((0, 0, 0))
 
 # Controller Gains TODO: Need to be calibrated
 K_x = 4 # Controller Proportional Gain (Translational part)
@@ -74,21 +70,10 @@ a1 = np.array((0.2588, -0.9659, 0.8528812)).T
 a2 = np.array((-0.9659, 0.2588, -0.85289255)).T
 a3 = np.array((0.7071, 0.7071, -0.85290402)).T
 
-
-# This is needed because in 3DoF the actuation matrix is 3x6, meaning non invertible. But because the goal is to solve Aq = [F M]^T, one can use the left inverse to solve
-# Check https://math.stackexchange.com/questions/1335693/invertible-matrix-of-non-square-matrix
-def compute_left_inverse(matrix):
-    left_inverse_matrix = np.dot(np.linalg.inv(np.dot(matrix.T, matrix)), matrix.T)
-    return left_inverse_matrix
-
 A = np.column_stack((a1, a2, a3))
 A_inverse = np.linalg.inv(A)
-#A_inverse = compute_left_inverse(A)
 
 def compute_force_and_torque(current_position, current_attitude):
-    global ctr
-    global x_vect
-    global y_vect
     # ************* Testing values, will be erased later ************* Should be received from IMU (?)
     current_linear_velocity = np.array((0, 0, 0))
     current_angular_velocity = np.array((0, 0, 0))
@@ -106,10 +91,8 @@ def compute_force_and_torque(current_position, current_attitude):
     error_w = current_angular_velocity - np.dot(np.dot( attitude_rotation_matrix.T, DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY)
     S_w_matrix = get_S_w( np.dot( np.dot(attitude_rotation_matrix.T, DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY ) )
     torque = -K_r * error_r - K_w * error_w + np.dot(np.dot(np.dot(np.dot(S_w_matrix, FREE_FLYER_MOMENT_OF_INERTIA), attitude_rotation_matrix.T), DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_VELOCITY) + np.dot(np.dot(np.dot(FREE_FLYER_MOMENT_OF_INERTIA, attitude_rotation_matrix.T), DESIRED_ROTATION_MATRIX), DESIRED_ANGULAR_ACCELERATION)
-
     force = np.array((force[0], force[2]))
     torque = np.array((torque[1]))
-
 
     return force, torque
 
